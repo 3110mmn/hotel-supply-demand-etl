@@ -110,9 +110,17 @@ jobs:
         id: update_result
         run: python scripts/check_update_result.py update-result.json --github-output
 
+      # fetch/municipality-fetch re-verify (and, if the actions/cache restore
+      # above missed, re-download) every source in config/*_sources.toml --
+      # both files are committed to git, so this step is self-healing and
+      # does not depend on data/raw or data/processed having survived the
+      # cache's 7-day eviction window.
       - name: Regenerate both reports with current code
         run: |
+          hotel-etl fetch
           hotel-etl build-db
+          hotel-etl municipality-fetch
+          hotel-etl municipality-build-db
           hotel-etl monitor
           hotel-etl municipality-report
 

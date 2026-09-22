@@ -47,11 +47,6 @@ jobs:
           restore-keys: |
             hotel-update-${{ runner.os }}-
 
-      - name: Require a restored database
-        run: |
-          test -f data/processed/hotel_market.sqlite3
-          test -f data/raw/manifest.json
-
       - name: Restore adopted source configuration
         run: |
           if [ -f .update-state/prefecture_sources.toml ]; then
@@ -63,9 +58,19 @@ jobs:
             cp .update-state/municipality_sources.toml config/municipality_sources.toml
           fi
 
+      # fetch/municipality-fetch re-verify (and, if the actions/cache restore
+      # above missed, re-download) every source in config/*_sources.toml --
+      # both files are committed to git, so this step is self-healing and
+      # does not depend on data/raw or data/processed having survived the
+      # cache's 7-day eviction window. When the cache did miss, this falls
+      # back to the last git-committed (human-reviewed) source list rather
+      # than whatever update-and-deploy.yml had most recently auto-adopted.
       - name: Regenerate reports with current code and latest data
         run: |
+          hotel-etl fetch
           hotel-etl build-db
+          hotel-etl municipality-fetch
+          hotel-etl municipality-build-db
           hotel-etl monitor
           hotel-etl municipality-report
 
