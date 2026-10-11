@@ -2,7 +2,7 @@
 
 観光庁「宿泊旅行統計調査」の公式Excelを取得・正規化し、SQLiteと静的HTMLレポートを再生成するデータパイプラインです。
 
-**[Live Demo：ホテルマーケットレポート](https://saito-mmn.github.io/hotel-supply-demand-etl/)**
+**[Live Demo：ホテルマーケットレポート](https://3110mmn.github.io/hotel-supply-demand-etl/)**
 
 **[Tableau Dashboard](https://public.tableau.com/views/_17880794228750/1?:language=ja-JP&publish=yes&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link)**: 都道府県・市区町村別の客室稼働率、延べ宿泊者数、施設数を対話的に確認できます。
 
