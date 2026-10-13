@@ -11,7 +11,7 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 from ..estat_client import _verified_ssl_context
-from ..fetcher import FetchError, sha256_file, validate_xlsx
+from ..fetcher import FetchError, retry_on_transient_network_error, sha256_file, validate_xlsx
 from .sources import MunicipalitySource
 
 
@@ -97,8 +97,8 @@ def fetch_municipality_sources(
         temp_name: str | None = None
         try:
             try:
-                response_context = urlopen(
-                    request, timeout=timeout, context=_verified_ssl_context()
+                response_context = retry_on_transient_network_error(
+                    lambda: urlopen(request, timeout=timeout, context=_verified_ssl_context())
                 )
             except HTTPError as exc:
                 if exc.code == 304 and previous:
