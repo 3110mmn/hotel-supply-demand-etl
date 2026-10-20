@@ -185,10 +185,17 @@ def fetch_municipality_sources(
                 entry["revisions"] = revisions
             entries[key] = entry
             results.append({**entry, "status": "downloaded"})
-        except Exception:
+        except FetchError:
             if temp_name and Path(temp_name).exists():
                 Path(temp_name).unlink()
             raise
+        except Exception as exc:
+            if temp_name and Path(temp_name).exists():
+                Path(temp_name).unlink()
+            raise FetchError(
+                f"failed to fetch {source.year}-{source.month:02d} "
+                f"({source.provider}:{source.stat_inf_id}) from {source.url}: {exc}"
+            ) from exc
     manifest["files"] = sorted(
         entries.values(), key=lambda item: (item["year"], item["month"])
     )

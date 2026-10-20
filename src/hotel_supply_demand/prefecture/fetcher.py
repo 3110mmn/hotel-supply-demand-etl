@@ -157,10 +157,16 @@ def fetch_sources(
                 entry["revisions"] = revisions
             entries[(source.year, source.release_type)] = entry
             results.append({**entry, "status": "downloaded"})
-        except Exception:
+        except FetchError:
             if temp_name and Path(temp_name).exists():
                 Path(temp_name).unlink()
             raise
+        except Exception as exc:
+            if temp_name and Path(temp_name).exists():
+                Path(temp_name).unlink()
+            raise FetchError(
+                f"failed to fetch {source.year} ({source.release_type}) from {source.url}: {exc}"
+            ) from exc
     manifest["files"] = sorted(entries.values(), key=lambda item: item["year"])
     temp_manifest = manifest_path.with_suffix(".json.tmp")
     temp_manifest.write_text(
