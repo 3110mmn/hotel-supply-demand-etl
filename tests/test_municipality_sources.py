@@ -16,7 +16,7 @@ class MunicipalitySourcesTest(unittest.TestCase):
         self.assertEqual(periods[0], (2019, 1))
         january = next(source for source in sources if (source.year, source.month) == (2026, 1))
         self.assertEqual(january.provider, "mlit")
-        self.assertEqual(january.stat_inf_id, "mlit:002010412")
+        self.assertEqual(january.stat_inf_id, "mlit:002026744")
         self.assertEqual(periods[-1], (2026, 5))
         self.assertEqual(sources[-1].stat_inf_id, "000040482630")
         self.assertEqual(sources[-1].published_on, "2026-07-31")

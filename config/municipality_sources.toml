@@ -761,9 +761,9 @@ year = 2026
 month = 1
 release_type = "second_preliminary"
 provider = "mlit"
-stat_inf_id = "mlit:002010412"
+stat_inf_id = "mlit:002026744"
 published_on = "2026-03-31"
-url = "https://www.mlit.go.jp/kankocho/content/002010412.xlsx"
+url = "https://www.mlit.go.jp/kankocho/content/002026744.xlsx"
 filename = "2026-01_second_preliminary.xlsx"
 
 [[municipality_sources]]
