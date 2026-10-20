@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 from urllib.error import HTTPError
@@ -54,6 +55,7 @@ def fetch_municipality_sources(
     timeout: float = 60,
     *,
     check_remote: bool = False,
+    request_interval_seconds: float = 0.5,
 ) -> list[dict]:
     raw_dir.mkdir(parents=True, exist_ok=True)
     manifest_path = raw_dir / "manifest.json"
@@ -63,6 +65,7 @@ def fetch_municipality_sources(
         for item in manifest["files"]
     }
     results: list[dict] = []
+    requests_sent = 0
     for source in sources:
         key = (source.year, source.month, source.release_type)
         destination = raw_dir / source.filename
@@ -81,6 +84,13 @@ def fetch_municipality_sources(
                 previous["provider"] = source.provider
                 results.append({**previous, "status": "skipped"})
                 continue
+
+        if requests_sent:
+            # Space out requests: e-Stat has been observed answering a real,
+            # unchanged file with a spurious error status when ~90 requests
+            # land back to back (most likely from shared CI runner IPs).
+            time.sleep(request_interval_seconds)
+        requests_sent += 1
 
         headers = {"User-Agent": "hotel-supply-demand-etl/0.1"}
         if (
