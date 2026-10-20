@@ -47,17 +47,9 @@ jobs:
           restore-keys: |
             hotel-update-${{ runner.os }}-
 
-      - name: Restore adopted source configuration
-        run: |
-          if [ -f .update-state/prefecture_sources.toml ]; then
-            cp .update-state/prefecture_sources.toml config/prefecture_sources.toml
-          elif [ -f .update-state/sources.toml ]; then
-            cp .update-state/sources.toml config/prefecture_sources.toml
-          fi
-          if [ -f .update-state/municipality_sources.toml ]; then
-            cp .update-state/municipality_sources.toml config/municipality_sources.toml
-          fi
-
+      # config/*_sources.toml comes straight from the git checkout, not from
+      # the cache: restoring a cached copy here previously clobbered a
+      # manual URL fix committed straight to git with a stale cached one.
       # fetch/municipality-fetch re-verify (and, if the actions/cache restore
       # above missed, re-download) every source in config/*_sources.toml --
       # both files are committed to git, so this step is self-healing and

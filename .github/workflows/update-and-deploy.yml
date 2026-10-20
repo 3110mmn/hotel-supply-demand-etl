@@ -75,17 +75,16 @@ jobs:
           restore-keys: |
             hotel-update-${{ runner.os }}-
 
-      - name: Restore generated reports and adopted source configuration
+      # Only reports/latest comes from the cache. config/*_sources.toml is
+      # NOT restored here: discover_prefecture_sources/discover_municipality_sources
+      # re-scrape the official listing fresh on every run and merge in
+      # anything new, so nothing is lost by not reusing a cached merge --
+      # but restoring a stale cached config DID repeatedly clobber a manual
+      # fix to a source URL committed straight to git (see commit history
+      # around 2026-10-20), since this step ran before the fetch below.
+      - name: Restore generated reports
         run: |
           if [ -d .update-state/reports ]; then cp -R .update-state/reports/. reports/latest/; fi
-          if [ -f .update-state/prefecture_sources.toml ]; then
-            cp .update-state/prefecture_sources.toml config/prefecture_sources.toml
-          elif [ -f .update-state/sources.toml ]; then
-            cp .update-state/sources.toml config/prefecture_sources.toml
-          fi
-          if [ -f .update-state/municipality_sources.toml ]; then
-            cp .update-state/municipality_sources.toml config/municipality_sources.toml
-          fi
 
       - name: Select scheduled update domain
         id: domain
@@ -131,7 +130,6 @@ jobs:
         run: |
           mkdir -p .update-state/reports
           cp -R reports/latest/. .update-state/reports/
-          cp config/prefecture_sources.toml config/municipality_sources.toml .update-state/
 
       - name: Decide whether deployment is needed
         id: decision
