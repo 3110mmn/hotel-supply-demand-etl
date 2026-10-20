@@ -14,10 +14,16 @@ from urllib.error import HTTPError, URLError
 T = TypeVar("T")
 
 # Low-level connection failures (SSL handshake timeouts, dropped connections,
-# DNS hiccups) that are worth a short retry. HTTPError is a URLError subclass
-# but is a completed response from the server (e.g. 304/404) -- retrying it
-# would not help, so callers should let it propagate immediately.
+# DNS hiccups) that are worth a short retry.
 TRANSIENT_NETWORK_ERRORS = (URLError, TimeoutError, ssl.SSLError)
+
+# HTTP status codes worth retrying. 404 is here on empirical grounds, not
+# HTTP convention: e-Stat has been observed returning a spurious 404 for a
+# real, unchanged file when ~90 requests land in quick succession (likely
+# rate-limiting/WAF behavior that doesn't bother with 429/503), and a retry
+# a few seconds later succeeds. A *persistent* 404 (the file genuinely
+# moved/was removed) still surfaces as an error once attempts are exhausted.
+RETRYABLE_HTTP_STATUS_CODES = frozenset({404, 429, 500, 502, 503, 504})
 
 
 class FetchError(RuntimeError):
@@ -29,15 +35,20 @@ def retry_on_transient_network_error(
 ) -> T:
     """Retry a network call a few times on timeouts/SSL/connection errors.
 
-    Official statistics sites occasionally stall or drop the TLS handshake;
-    a short retry avoids failing an entire scheduled run (which can touch
-    90+ source files in one pass) over a single transient blip.
+    Official statistics sites occasionally stall or drop the TLS handshake,
+    or (empirically) answer a real file with a transient error status under
+    load. A short retry avoids failing an entire scheduled run (which can
+    touch 90+ source files in one pass) over a single blip. Non-retryable
+    HTTPErrors (e.g. 304 Not Modified, used by callers for change detection,
+    or a definitive 403/410) propagate immediately.
     """
     for attempt in range(1, attempts + 1):
         try:
             return call()
-        except HTTPError:
-            raise
+        except HTTPError as exc:
+            if exc.code not in RETRYABLE_HTTP_STATUS_CODES or attempt == attempts:
+                raise
+            time.sleep(backoff_seconds * attempt)
         except TRANSIENT_NETWORK_ERRORS:
             if attempt == attempts:
                 raise
